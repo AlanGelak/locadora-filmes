@@ -1,0 +1,48 @@
+# Dependências Node
+**/node_modules/
+
+# Arquivos de ambiente e credenciais
+**/.env
+**/.env.*
+!**/.env.example
+
+# Builds
+**/dist/
+**/build/
+**/.vite/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Cobertura de testes
+**/coverage/
+
+# Arquivos temporários
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Editores e IDEs
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Cache
+.cache/
+.eslintcache
+
+# Arquivos locais
+*.local
