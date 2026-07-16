@@ -17,6 +17,7 @@ const router = createRouter({
             component: () =>
                 import("@/views/HomeView.vue")
         },
+
         {
             path: "/login",
             name: "login",
@@ -27,6 +28,18 @@ const router = createRouter({
                 somenteVisitante: true
             }
         },
+
+        {
+            path: "/cadastro",
+            name: "cadastro",
+            component: () =>
+                import("@/views/CadastroView.vue"),
+
+            meta: {
+                somenteVisitante: true
+            }
+        },
+
         {
             path: "/admin/filmes",
             name: "admin-filmes",
@@ -34,9 +47,10 @@ const router = createRouter({
                 import("@/views/FilmesView.vue"),
 
             meta: {
-                requerAutenticacao: true
+                requerAdmin: true
             }
         },
+
         {
             path: "/admin/categorias",
             name: "categorias",
@@ -44,39 +58,49 @@ const router = createRouter({
                 import("@/views/CategoriasView.vue"),
 
             meta: {
-                requerAutenticacao: true
+                requerAdmin: true
             }
         },
+
         {
             path: "/admin/filmes/novo",
             name: "novo-filme",
             component: () =>
-                import("@/views/FilmeFormularioView.vue"),
+                import(
+                    "@/views/FilmeFormularioView.vue"
+                ),
 
             meta: {
-                requerAutenticacao: true
+                requerAdmin: true
             }
         },
+
         {
             path: "/admin/filmes/:id/editar",
             name: "editar-filme",
             component: () =>
-                import("@/views/FilmeFormularioView.vue"),
+                import(
+                    "@/views/FilmeFormularioView.vue"
+                ),
 
             meta: {
-                requerAutenticacao: true
+                requerAdmin: true
             }
         },
+
         {
             path: "/admin/filmes/:id",
             name: "detalhes-filme",
             component: () =>
-                import("@/views/FilmeDetalhesView.vue"),
+                import(
+                    "@/views/FilmeDetalhesView.vue"
+                ),
 
             meta: {
-                requerAutenticacao: true
+                requerAdmin: true
             }
         },
+
         {
             path: "/:caminhoNaoEncontrado(.*)*",
             redirect: "/"
@@ -88,21 +112,55 @@ router.beforeEach((rotaDestino) => {
     const autenticado =
         authService.estaAutenticado();
 
-    if (
-        rotaDestino.meta.requerAutenticacao &&
-        !autenticado
-    ) {
-        return {
-            name: "login"
-        };
+    const administrador =
+        authService.ehAdmin();
+
+    /*
+     * Protege as páginas administrativas.
+     */
+    if (rotaDestino.meta.requerAdmin) {
+        /*
+         * Sem login, envia para a tela de login.
+         */
+        if (!autenticado) {
+            return {
+                name: "login"
+            };
+        }
+
+        /*
+         * Está logado, mas não é admin:
+         * volta para a Home.
+         */
+        if (!administrador) {
+            return {
+                name: "home"
+            };
+        }
     }
 
+    /*
+     * Impede usuário logado de voltar
+     * para login ou cadastro.
+     */
     if (
         rotaDestino.meta.somenteVisitante &&
         autenticado
     ) {
+        /*
+         * Admin volta ao painel.
+         */
+        if (administrador) {
+            return {
+                name: "admin-filmes"
+            };
+        }
+
+        /*
+         * Usuário comum volta à Home.
+         */
         return {
-            name: "admin-filmes"
+            name: "home"
         };
     }
 

@@ -79,7 +79,7 @@ async function sair() {
     authService.logout();
 
     await router.push({
-        name: "login"
+        name: "home"
     });
 }
 

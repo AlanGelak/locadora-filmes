@@ -25,13 +25,25 @@ async function entrar() {
     try {
         carregando.value = true;
 
-        await authService.login(
-            email.value.trim(),
-            senha.value
-        );
+        const resposta =
+            await authService.login(
+                email.value.trim(),
+                senha.value
+            );
 
+        if (
+            authService.ehAdmin(
+                resposta.usuario
+            )
+        ) {
+            await router.push({
+                name: "admin-filmes"
+            });
+
+            return;
+        }
         await router.push({
-            name: "admin-filmes"
+            name: "home"
         });
     } catch (erro) {
         mensagemErro.value =

@@ -1,5 +1,6 @@
 <script setup>
 import {
+    computed,
     onBeforeUnmount,
     onMounted,
     ref
@@ -13,6 +14,10 @@ import { API_ORIGIN } from "@/services/api";
 
 const router = useRouter();
 
+const usuario = ref(
+    authService.obterUsuario()
+);
+
 const filmes = ref([]);
 const termoPesquisa = ref("");
 const filmeSelecionado = ref(null);
@@ -20,8 +25,50 @@ const filmeSelecionado = ref(null);
 const carregando = ref(false);
 const mensagemErro = ref("");
 
-const autenticado =
-    authService.estaAutenticado();
+/*
+ * Retorna true quando existe usuário
+ * e existe um token salvo.
+ */
+const autenticado = computed(() => {
+    return Boolean(
+        usuario.value &&
+        authService.estaAutenticado()
+    );
+});
+
+/*
+ * Verifica se o e-mail do usuário
+ * contém a palavra "admin".
+ */
+const administrador = computed(() => {
+    return authService.ehAdmin(
+        usuario.value
+    );
+});
+
+function abrirLogin() {
+    router.push({
+        name: "login"
+    });
+}
+
+function abrirCadastro() {
+    router.push({
+        name: "cadastro"
+    });
+}
+
+function abrirPainelAdmin() {
+    router.push({
+        name: "admin-filmes"
+    });
+}
+
+function sair() {
+    authService.logout();
+
+    usuario.value = null;
+}
 
 function abrirDetalhes(filme) {
     filmeSelecionado.value = filme;
@@ -91,20 +138,6 @@ async function limparPesquisa() {
     await carregarFilmes();
 }
 
-function abrirLoginOuAdmin() {
-    if (autenticado) {
-        router.push({
-            name: "admin-filmes"
-        });
-
-        return;
-    }
-
-    router.push({
-        name: "login"
-    });
-}
-
 onMounted(() => {
     carregarFilmes();
 
@@ -141,17 +174,50 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <button
-                type="button"
-                class="botao-login"
-                @click="abrirLoginOuAdmin"
-            >
-                {{
-                    autenticado
-                        ? "Painel administrativo"
-                        : "Entrar"
-                }}
-            </button>
+            <div class="acoes-usuario">
+                <!-- Usuário autenticado -->
+                <template v-if="autenticado">
+                    <span class="nome-usuario">
+                        Olá, {{ usuario.nome }}
+                    </span>
+
+                    <button
+                        v-if="administrador"
+                        type="button"
+                        class="botao-admin"
+                        @click="abrirPainelAdmin"
+                    >
+                        Painel administrativo
+                    </button>
+
+                    <button
+                        type="button"
+                        class="botao-sair"
+                        @click="sair"
+                    >
+                        Sair
+                    </button>
+                </template>
+
+                <!-- Visitante -->
+                <template v-else>
+                    <button
+                        type="button"
+                        class="botao-cadastro"
+                        @click="abrirCadastro"
+                    >
+                        Cadastrar
+                    </button>
+
+                    <button
+                        type="button"
+                        class="botao-login"
+                        @click="abrirLogin"
+                    >
+                        Entrar
+                    </button>
+                </template>
+            </div>
         </header>
 
         <main class="conteudo">
@@ -240,16 +306,22 @@ onBeforeUnmount(() => {
                         class="cartao-filme"
                         role="button"
                         tabindex="0"
-                        :aria-label="`Ver detalhes do filme ${filme.titulo}`"
+                        :aria-label="
+                            `Ver detalhes do filme ${filme.titulo}`
+                        "
                         @click="abrirDetalhes(filme)"
                         @keydown.enter="abrirDetalhes(filme)"
-                        @keydown.space.prevent="abrirDetalhes(filme)"
+                        @keydown.space.prevent="
+                            abrirDetalhes(filme)
+                        "
                     >
                         <div class="area-imagem">
                             <img
                                 v-if="obterUrlImagem(filme)"
                                 :src="obterUrlImagem(filme)"
-                                :alt="`Capa do filme ${filme.titulo}`"
+                                :alt="
+                                    `Capa do filme ${filme.titulo}`
+                                "
                                 loading="lazy"
                             />
 
@@ -352,6 +424,7 @@ onBeforeUnmount(() => {
             </section>
         </main>
 
+        <!-- Modal com detalhes do filme -->
         <div
             v-if="filmeSelecionado"
             class="fundo-modal"
@@ -362,7 +435,9 @@ onBeforeUnmount(() => {
                 class="modal-filme"
                 role="dialog"
                 aria-modal="true"
-                :aria-label="`Detalhes do filme ${filmeSelecionado.titulo}`"
+                :aria-label="
+                    `Detalhes do filme ${filmeSelecionado.titulo}`
+                "
             >
                 <button
                     type="button"
@@ -377,9 +452,19 @@ onBeforeUnmount(() => {
                 <div class="modal-conteudo">
                     <div class="modal-imagem">
                         <img
-                            v-if="obterUrlImagem(filmeSelecionado)"
-                            :src="obterUrlImagem(filmeSelecionado)"
-                            :alt="`Capa do filme ${filmeSelecionado.titulo}`"
+                            v-if="
+                                obterUrlImagem(
+                                    filmeSelecionado
+                                )
+                            "
+                            :src="
+                                obterUrlImagem(
+                                    filmeSelecionado
+                                )
+                            "
+                            :alt="
+                                `Capa do filme ${filmeSelecionado.titulo}`
+                            "
                         />
 
                         <div
@@ -523,18 +608,48 @@ onBeforeUnmount(() => {
     color: #9da8bd;
 }
 
-.botao-login {
+/* Área do usuário */
+
+.acoes-usuario {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nome-usuario {
+    margin-right: 5px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.acoes-usuario button {
     padding: 11px 18px;
-    border: 1px solid #6379cc;
     border-radius: 9px;
     font-weight: 700;
     color: #ffffff;
     cursor: pointer;
+}
+
+.botao-login,
+.botao-admin {
+    border: 1px solid #6379cc;
     background: #293b7a;
 }
 
-.botao-login:hover {
+.botao-login:hover,
+.botao-admin:hover {
     background: #3852a4;
+}
+
+.botao-cadastro,
+.botao-sair {
+    border: 1px solid #53617c;
+    background: #353e50;
+}
+
+.botao-cadastro:hover,
+.botao-sair:hover {
+    background: #465166;
 }
 
 .conteudo {
@@ -809,7 +924,7 @@ onBeforeUnmount(() => {
     background: #4e6de6;
 }
 
-/* Modal dos detalhes do filme */
+/* Modal */
 
 .fundo-modal {
     position: fixed;
@@ -971,8 +1086,18 @@ onBeforeUnmount(() => {
         gap: 16px;
     }
 
-    .botao-login {
+    .acoes-usuario {
         width: 100%;
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .acoes-usuario button {
+        width: 100%;
+    }
+
+    .nome-usuario {
+        margin: 0 0 5px;
     }
 
     .barra-pesquisa {

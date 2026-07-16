@@ -3,6 +3,18 @@ import api from "./api";
 const CHAVE_TOKEN = "token";
 const CHAVE_USUARIO = "usuario";
 
+async function cadastrar(nome, email, senha) {
+    const resposta = await api.post(
+        "/auth/cadastrar",
+        {
+            nome,
+            email,
+            senha
+        }
+    );
+    return resposta.data;
+}
+
 async function login(email, senha) {
     const resposta = await api.post(
         "/auth/login",
@@ -23,6 +35,13 @@ async function login(email, senha) {
     );
 
     return resposta.data;
+}
+
+function ehAdmin(usuario = obterUsuario()) {
+    const email = String(
+        usuario?.email || ""
+    ).toLowerCase();
+    return email.includes("admin");
 }
 
 function logout() {
@@ -46,6 +65,7 @@ function obterUsuario() {
         return JSON.parse(usuarioSalvo);
     } catch {
         localStorage.removeItem(CHAVE_USUARIO);
+
         return null;
     }
 }
@@ -55,9 +75,11 @@ function estaAutenticado() {
 }
 
 export default {
+    cadastrar,
     login,
     logout,
     obterToken,
     obterUsuario,
-    estaAutenticado
+    estaAutenticado,
+    ehAdmin
 };
